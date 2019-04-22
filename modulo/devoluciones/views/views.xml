@@ -1,0 +1,138 @@
+<odoo>
+  <data>
+    <!--VISTA FORMULARIO-->
+    <record id="vista_devoluciones_form" model="ir.ui.view">
+      <field name="name">model.devo.form</field>
+      <field name="model">model.devo</field>
+      <field name="arch" type="xml">
+        <form>
+          <header>
+            <button string="Aprovar" name="aprovar" type="object" class="oe_highlight" attrs="{'invisible':[('lineas', '=', 0)]}"/>
+            <button string="Buscar" name="buscar" type="object" class="oe_highlight"/>
+            <field name="state" widget="statusbar"/>
+          </header>
+          <sheet>
+            <div class="oe_title">
+              <h1>
+                  <field name="referencia" readonly="1"/>
+              </h1>
+          </div>
+            <group>
+              <group>
+                <field name="tipo_usuario" required="1"/>
+                <field name="serie" required="1"/>
+                <field name="folio_salida" attrs="{'invisible':[('tipo_usuario','=','proveedor')]}"/>
+                <field name="nombre_responsable" required="1"/>
+                <field name="numero_responsable"/>
+              </group>
+              <group>
+                <field name="estado_procedencia"/>
+                <field name="ciudad_procedencia"/>
+                <field name="codigo_postal"/>
+                <field name="fecha_devolucion"/>
+                <field name="nombre_cancelo"/>
+                <field name="salida" invisible="1"/>
+                <field name="lineas" invisible="1"/>
+                <field name="num_aprovados"/>
+                <field name="num_rechazados"/>
+              </group>
+            </group>
+            <notebook>
+              <page string="Tabla de devoluciones">
+                <sheet>
+                  <field name="tabla_devo">
+                    <tree string="Productos" editable="bottom">
+                      <field name="producto"/>
+                      <field name="talla"/>
+                      <field name="serie"/>
+                      <field name="pedido"/>
+                      <field name="fecha"/>
+                      <field name="estatus"/>
+                      <field name="motivo"/>
+                      <field name="precio_unico"/>
+                    </tree>
+                  </field>
+                </sheet>
+              </page>
+            </notebook>
+          </sheet>
+        </form>
+      </field>
+    </record>
+    
+    <!--VISTA ARBOL-->
+    <record id="model_devo_tree" model="ir.ui.view">
+      <field name="name">model.devo.tree</field>
+      <field name="model">model.devo</field>
+      <field name="arch" type="xml">
+        <tree string="Listado devoluciones">
+          <field name="referencia" string="Referencia"/>
+          <field name="tipo_usuario" string="Tipo de usuario"/>
+          <field name="nombre_responsable" string="Nombre del responsable"/>
+          <field name="fecha_devolucion"/>
+        </tree>
+      </field>
+    </record>
+  
+    <!--ACTIONS-->
+    <record id="action_vista_devoluciones" model="ir.actions.act_window">
+      <field name="name">Ordenes de devoluciones</field>
+      <field name="type">ir.actions.act_window</field>
+      <field name="res_model">model.devo</field>
+      <field name="view_type">form</field>
+      <field name="view_mode">tree,form</field>
+    </record>
+    
+    <!--MENUS-->
+    <menuitem name="Devoluciones" id="devo_menu_root" sequence="1"/>
+    <menuitem name="clientes" id="devo_cliente_menu" sequence="1" parent="devo_menu_root"/>
+    <menuitem name="clientes" id="action_devo_menu_root" sequence="1" parent="devo_cliente_menu" action="action_vista_devoluciones"/>
+
+    <!--CAMPOS PARA EL MODELO DE STOCK_PICKING_TYPE-->
+    <record id="fields_model_stock_picking_type" model="ir.ui.view">
+      <field name="name">field.type</field>
+      <field name="model">stock.picking.type</field>
+      <field name="inherit_id" ref="stock.view_picking_type_form"/>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='show_reserved']" position="after">
+          <field name="devo_cliente" attrs="{'invisible':[('code', '=', 'incoming')]}"/>
+          <field name="devo_proveedor" attrs="{'invisible':[('code', '=', 'outgoing')]}"/>
+          <field name="devo_rechazadas" attrs=""/>
+        </xpath>
+      </field>
+    </record>
+
+    <!--CAMPO DE PLAZO DE DEVOLUCION EN EL MODELO DE SALE Y PURCHASE-->
+    <record id="plazo_devo_sale" model="ir.ui.view">
+      <field name="name">plazo.devo</field>
+      <field name="model">sale.order</field>
+      <field name="inherit_id" ref="sale.view_order_form"/>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='confirmation_date']" position="after">
+          <field name="plazo_devo"/>
+        </xpath>
+      </field>
+    </record>
+    <record id="plazo_devo_purchase" model="ir.ui.view">
+      <field name="name">plazo.devo</field>
+      <field name="model">purchase.order</field>
+      <field name="inherit_id" ref="purchase.purchase_order_form"/>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='date_order']" position="after">
+          <field name="plazo_devo"/>
+        </xpath>
+      </field>
+    </record>
+
+    <record id="number_seq" model="ir.sequence">
+      <field name="name">Identificador</field>
+      <field name="code">model.devo</field>
+      <field name="active">True</field>
+      <field name="prefix">DEV/</field>
+      <field name="number_increment">1</field>
+      <field name="number_next">1</field>
+      <field name="padding">3</field>
+      <field name="implementation">standard</field>
+    </record>
+  </data>
+</odoo>

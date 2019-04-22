@@ -1,0 +1,165 @@
+<odoo> 
+  <template id="ticke_clien_devo">
+    <t t-call="web.html_container">
+      <t t-call="web.basic_layout">
+         <t t-foreach="docs" t-as="doc">
+          <div class="page">  
+             <!--Encabezado -->
+            <div  class="row">
+              <div class="col-3 text-left">
+                <span>Daniel Robleas</span>
+              </div>  
+              <div class="col-3 text-right">
+                <p t-field="doc.fecha_devolucion"/>  
+              </div>
+              <div style="text-align: center">
+                <span>
+                  Zapateria Platino S.A de C.V <br/>
+                  Prol.Pino Suares 1893 Col El vigia <br/>
+                  Zapopan,Jalisco C.P.45140 <br/>
+                  RFC:ZPL1212183K1
+                </span>
+              </div>
+            </div>
+                      <!--Estructura para ticket proveedor-->
+            <t t-if="doc.tipo_usuario== 'proveedor' ">
+              <div t-if="doc.state =='draft'">
+                <strong>No.Nota de credito:</strong>  
+              </div>
+              <div t-if="doc.state =='draft'">
+                <strong>Salida(dev.proveedor):
+                  <span t-field="doc.salida" style="text-align:center; margin-top:2em; font-size:17px;"/>
+                </strong>
+              </div> 
+              <div t-if="doc.state =='draft'">
+                <strong>NOTA DE DEVOLUCION:
+                   <span t-field="doc.referencia" style="text-align:center; margin-top:2em; font-size:17px;"/>
+                </strong>
+              </div>
+              <div t-if="doc.state=='draft'">
+                <strong>No.Proveedor:
+                  <span t-field="doc.numero_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>  
+                </strong>
+              </div>
+              <div t-if="doc.state=='draft'">
+                <strong>Nombre:
+                  <span t-field="doc.nombre_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>  
+                </strong>
+              </div>
+              <!--tabla para productos de proveedor-->
+              <div t-if="doc.state=='draft'">
+                <table class="table table-condensed">
+                  <thead>
+                    <tr>
+                      <th class="text-center">Estilo</th>
+                      <th class="text-center">Talla</th>
+                      <th class="text-center">Cantidad</th>
+                      <th class="text-center">costo</th>
+                    </tr>
+                  </thead>
+                  <tbody class="sale_tbody">
+                    <t t-foreach="doc.tabla_devo" t-as="dl">
+                      <tr>
+                        <td>
+                          <span t-field="dl.producto"/>
+                        </td>
+                        <td class="text-center">
+                          <span></span>
+                        </td> 
+                        <td class="text-center">
+                           <span>1</span>
+                        </td>
+                        <td class="text-center">
+                          <span t-field="dl.precio_unico" />
+                        </td> 
+                      </tr>
+                    </t>
+                  </tbody>
+                </table>
+              </div>
+              <!--tabla para proveedor motivos y series -->  
+              <div t-if="doc.state=='draft'"> 
+                <table class="table table-condensed">
+                  <thead>
+                    <tr>
+                      <th class="text-center">Motivo</th>
+                      <th class="text-center">serie</th>
+                    </tr>
+                  </thead>
+                  <tbody class="sale_tbody">
+                    <t t-foreach="doc.tabla_devo" t-as="dp">
+                      <tr>
+                        <td>
+                          <span t-field="dp.motivo"/>
+                        </td>
+                        <td class="text-center">
+                          <span t-field="dp.serie" />
+                        </td> 
+                      </tr>
+                    </t>
+                  </tbody>
+                </table>
+              </div>
+              <div class="row">
+                <div t-if="doc.state=='draft'" class="col-6 text-left"> 
+                  <strong>Articulos totales:
+                     <span t-esc="doc.num_aprovados+doc.num_rechazados"/> 
+                  </strong>
+                </div>  
+               <div t-if="doc.state=='draft'" class="col-6 text-right">
+                  <strong>Importe total</strong>
+                  <span t-esc="sum(line.precio_unico for line in docs.tabla_devo)"/>
+                </div>
+             
+              </div>
+            </t>  
+          </div>
+        </t>
+      </t>
+    </t>                
+  </template>
+    
+  <record id="paperformat_ticket" model="report.paperformat">
+    <field name="name">Point Of Sale Receipt</field>
+    <field name="default" eval="True"/>
+    <field name="format">custom</field>
+    <field name="page_height">160</field>
+    <field name="page_width">75</field>
+    <field name="orientation">Portrait</field>
+    <field name="margin_top">3</field>
+    <field name="margin_bottom">3</field>
+    <field name="margin_left">3</field>
+    <field name="margin_right">3</field>
+    <field name="header_line" eval="False" />
+    <field name="header_spacing">3</field>
+    <field name="dpi">130</field>
+  </record>
+
+<report
+    string="Tickets"
+    id="action_imp_tickets"
+    model="model.devo"
+    report_type="qweb-pdf"
+    name="devoluciones.ticke_clien_devo"
+    file="devoluciones.ticket_cl_temp"
+    paperformat="devoluciones.paperformat_ticket"
+  />
+<!--
+  <record id="minuta_email_orden" model="mail.template">
+    <field name="name">Email Devolucion del Día</field>
+    <field name="email_from">${object.company_id and object.company_id.email}</field>
+    <field name="subject">Devolucion</field>
+    <field name="email_to">${object.emails}</field>
+    <field name="lang">${object.lang}</field>
+    <field name="model_id" ref="devoluciones.model_return_clien"/>
+    <field name="auto_delete" eval="True"/>
+    <field name="report_template" ref="devoluciones.action_imp_tickets"/>
+    <field name="report_name">devolucion-${object.name_in}</field>
+    <field name="body_html" type="html">
+      <p>Estimado cliente:</p>
+        <p style="text-align: justify; ">
+          Le informamos que fue registrada una devolución con numero ${object.name_in} y fecha ${object.fecha_actual} con su número de cliente “……..” en la sucursal “…………” para cualquier duda o aclaración favor de comunicarse a los teléfonos: “……………………….” Con cualquiera de nuestros agentes.
+        </p>
+    </field>
+  </record>-->
+</odoo>

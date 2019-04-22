@@ -1,0 +1,13 @@
+<odoo>
+	<data>
+		<report
+        string="Tickets"
+        id="action_imp_tickets"
+        model="model.devo"
+        name="devoluciones.ticke_clien_devo"
+        file="devoluciones.ticket_cl_temp"
+        report_type="qweb-pdf"
+        print_report_name="'Tickets - %s' % object.referencia"
+    	/>
+	</data>
+</odoo>
