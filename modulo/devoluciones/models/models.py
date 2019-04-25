@@ -10,7 +10,6 @@ class Devoluciones(models.Model):
 	state = fields.Selection([('draft', 'Borrador'),('approve','Aprovado'),('done','Heho'),('reject','Rechazado')], default="draft")
 	tipo_usuario = fields.Selection([('cliente', 'Cliente'),('proveedor', 'Proveedor')], string="Tipo de usuario")
 	serie = fields.Char(string="Serie del producto")
-	folio_salida = fields.Char(string="Folio de salida")
 	nombre_responsable = fields.Many2one('res.partner', string="Nombre del responsable")
 	numero_responsable = fields.Char(string="Numero del resposable")
 	estado_procedencia = fields.Many2one('res.country.state', string="Estado de procedencia")
@@ -20,8 +19,9 @@ class Devoluciones(models.Model):
 	nombre_cancelo = fields.Many2one('res.user', string="Cancelo")
 	lineas = fields.Integer(string="Lineas", default=0, compute="_get_lines")
 	salida = fields.Char(string="Salida")
-	num_aprovados = fields.Integer(string="Aprovados", compute="_get_result")
-	num_rechazados = fields.Integer(string="Rechazados", compute="_get_result")
+	num_aprovados = fields.Integer(string="Productos aprovados", compute="_get_result")
+	num_rechazados = fields.Integer(string="Productos rechazados", compute="_get_result")
+	total_productos = fields.Integer(string="Total productos escaneados", compute="_get_result")
 	tabla_devo = fields.One2many('tabla.devo', 'devolucion_id')
 
 	@api.depends('tabla_devo')
@@ -29,15 +29,16 @@ class Devoluciones(models.Model):
 		if self.tabla_devo:
 			numero_a = 0
 			numero_r = 0
+			total = 0
 			for num in self.tabla_devo:
+				total += 1
+				self.total_productos = total
 				if num.estatus == 'Aprovado':
 					numero_a += 1
 					self.num_aprovados = numero_a
 				if num.estatus == 'Rechazado por tiempo':
 					numero_r += 1
 					self.num_rechazados = numero_r 	
-
-
 
 	@api.depends('tabla_devo')
 	def _get_lines(self):
@@ -55,7 +56,54 @@ class Devoluciones(models.Model):
 	@api.one
 	def buscar(self):
 		if self.tipo_usuario == 'cliente':
-			raise ValidationError('Error')
+			serie_pro_venta = self.env['stock.move.line'].search([('lot_id', '=', self.serie),('reference', 'like', 'WH/OUT')], limit=1)
+			if serie_pro_venta:
+				stock_venta = self.env['stock.picking'].search([('name', '=', serie_pro_venta.reference)], limit=1)
+				if stock_venta:
+					self.nombre_responsable = stock_venta.partner_id.id
+					self.estado_procedencia = stock_venta.partner_id.state_id.id
+					self.ciudad_procedencia = stock_venta.partner_id.city
+					self.codigo_postal = stock_venta.partner_id.zip
+
+					venta = self.env['sale.order'].search([('name','=', stock_venta.origin)], limit=1)
+					if venta:
+						if venta.partner_id.id == self.nombre_responsable.id:
+							if stock_venta.picking_type_code == 'outgoing':
+								igual = 0
+								for record in self.tabla_devo:
+									if record.serie == serie_pro_venta.lot_id:
+										igual +=1
+									else:
+										igual = 0	
+								if igual == 0:
+									status = ''
+									if venta.plazo_devo > self.fecha_devolucion:
+										status = 'Aprovado'
+									else:
+										status = 'Rechazado por tiempo'			
+									registro_devo = self.env['tabla.devo']
+									for pri in venta:
+										price = self.env['sale.order.line'].search([('product_id', '=', serie_pro_venta.product_id.id)], limit=1)
+										registro_devo_value = {
+											'producto': serie_pro_venta.product_id.id,
+											'serie': serie_pro_venta.lot_id.id,
+											'pedido': stock_venta.origin,
+											'fecha': serie_pro_venta.date,
+											'estatus': status,
+											'precio_unico':price.price_unit,
+											'devolucion_id': self.id,
+										}
+									registro_devo_id = registro_devo.create(registro_devo_value)
+								else:
+									raise ValidationError('Este numero de serie ya se agrego a tu tabla...')	
+						else:
+							raise ValidationError('Esta orden de pedido no pertenece al mismo proveedor')	
+					else:
+						raise ValidationError('No existe un compra para este numero de serie')
+				else:
+					raise ValidationError('Lo sentimos no se encotro un stock de venta para esta serie')	
+			else:
+				raise ValidationError('El numero de serie no se encotro, por favor intente con otro.')
 		else:
 			buscar_serie = self.env['stock.move.line'].search([('lot_id', '=', self.serie)], limit=1)
 			if buscar_serie:
@@ -86,15 +134,19 @@ class Devoluciones(models.Model):
 									else:
 										status = 'Rechazado por tiempo'			
 									registro_devo = self.env['tabla.devo']
-									registro_devo_value = {
-										'producto': buscar_serie.product_id.id,
-										'serie': buscar_serie.lot_id.id,
-										'pedido': buscar_ref.origin,
-										'fecha': buscar_serie.date,
-										'estatus': status,
-										'precio_unico':buscar_compra.order_line.price_unit,
-										'devolucion_id': self.id,
-									}
+
+									for pri in buscar_compra:
+										price = self.env['purchase.order.line'].search([('product_id', '=', buscar_serie.product_id.id)], limit=1)
+
+										registro_devo_value = {
+											'producto': buscar_serie.product_id.id,
+											'serie': buscar_serie.lot_id.id,
+											'pedido': buscar_ref.origin,
+											'fecha': buscar_serie.date,
+											'estatus': status,
+											'precio_unico':price.price_unit,
+											'devolucion_id': self.id,
+										}
 									registro_devo_id = registro_devo.create(registro_devo_value)
 								else:
 									raise ValidationError('Este numero de serie ya se agrego a tu tabla...')	
@@ -203,11 +255,14 @@ class ProveedorCliente(models.Model):
 	devo_cliente = fields.Boolean(string="Cliente")
 	devo_proveedor = fields.Boolean(string="Proveedor")
 	devo_rechazadas = fields.Boolean(string="Productos rechazados")
+	devo_rechadoclientes = fields.Boolean(string="Productos rechazados a clientes")
 
 
 class PlazoDevolucionSale(models.Model):
 	_inherit = 'sale.order'
 
+	intervalo_defecto = fields.Boolean(string="Usar plazo de devolucion por defecto", default=True, help="El plazo de devolucion por defecto es de 40 dias despues de la compra")
+	intervalo_variante = fields.Integer(string="Nuevo plazo en dias")
 	plazo_devo = fields.Date(string="Fecha limite de devolucion", compute="_compute_date_devo") 
 
 	@api.one
@@ -219,13 +274,20 @@ class PlazoDevolucionSale(models.Model):
 class PlazoDevolucionPurchase(models.Model):
 	_inherit = 'purchase.order'
 
+	intervalo_defecto = fields.Boolean(string="Usar plazo de devolucion por defecto", default=True, help="El plazo de devolucion por defecto es de 40 dias despues de la compra")
+	intervalo_variante = fields.Integer(string="Nuevo plazo en dias")
 	plazo_devo = fields.Date(string="Fecha limite de devolucion", compute="_compute_date_devo") 
 
 	@api.one
 	def _compute_date_devo(self):
 		if self.date_order:
-			fecha = datetime.strptime(self.date_order, '%Y-%m-%d %H:%M:%S') + timedelta(days=40)
-			self.plazo_devo = fecha		
+			if self.intervalo_defecto == True:
+				fecha = datetime.strptime(self.date_order, '%Y-%m-%d %H:%M:%S') + timedelta(days=40)
+				self.plazo_devo = fecha
+			else:
+				intervalo = self.intervalo_variante 
+				fecha = datetime.strptime(self.date_order, '%Y-%m-%d %H:%M:%S') + timedelta(days=intervalo)
+				self.plazo_devo =fecha	
 
 	@api.one
 	def button_cancel(self):
