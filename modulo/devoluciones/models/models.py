@@ -23,6 +23,7 @@ class Devoluciones(models.Model):
 	num_rechazados = fields.Integer(string="Productos rechazados", compute="_get_result")
 	total_productos = fields.Integer(string="Total productos escaneados", compute="_get_result")
 	tabla_devo = fields.One2many('tabla.devo', 'devolucion_id')
+	verificado = fields.Boolean(string="Verificador")
 
 	@api.depends('tabla_devo')
 	def _get_result(self):
@@ -109,6 +110,9 @@ class Devoluciones(models.Model):
 			if buscar_serie:
 				buscar_ref = self.env['stock.picking'].search([('name', '=', buscar_serie.reference)], limit=1)
 				if buscar_ref:
+					if self.verificado == False:
+						self.verificado = True
+						self.nombre_responsable = buscar_ref.partner_id.id
 					self.write({'salida': buscar_ref.name})
 					buscar_compra = self.env['purchase.order'].search([('name','=', buscar_ref.origin)], limit=1)
 					if buscar_compra:
