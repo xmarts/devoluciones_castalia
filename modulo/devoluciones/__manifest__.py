@@ -3,15 +3,17 @@
     'name': "devoluciones",
 
     'summary': """
-        Short (1 phrase/line) summary of the module's purpose, used as
-        subtitle on modules listing or apps.openerp.com""",
+        In this module returns are made for purchases and sales,
+    generating a series of states to approve the return of productsm""",
 
     'description': """
-        Long description of module's purpose
+       In this module returns are made for purchases and sales, generating a series of states to approve the return of products,
+   where sales has a functionality that allows you to reject the product by return time and sending the name of the user who is making the return.
     """,
 
-    'author': "My Company",
-    'website': "http://www.yourcompany.com",
+    'author': "XMARTS",
+    'email' :"desarrollo@xmarts.com",
+    'contributors':"luis angel gonzalez cruz and Gilberto Santiago Acevedo",
 
     # Categories can be used to filter modules in modules listing
     # Check https://github.com/odoo/odoo/blob/12.0/odoo/addons/base/data/ir_module_category_data.xml
