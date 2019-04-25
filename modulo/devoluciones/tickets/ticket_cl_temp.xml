@@ -21,7 +21,7 @@
                 </span>
               </div>
             </div>
-                      <!--Estructura para ticket proveedor-->
+            <!--Estructura para ticket proveedor-->
             <t t-if="doc.tipo_usuario== 'proveedor' ">
               <div t-if="doc.state =='draft'">
                 <strong>No.Nota de credito:</strong>  
@@ -112,11 +112,224 @@
                 </div>
              
               </div>
-            </t>  
+            </t>   
+
+            <!--estructura para ticket de clientes-->
+            <t t-if="doc.tipo_usuario== 'cliente'">
+              <div t-if="doc.state =='draft'">
+                <strong>NOTA DE DEVOLUCION:
+                   <span t-field="doc.referencia" style="text-align:center; margin-top:2em; font-size:17px;"/>
+                </strong>
+              </div>
+              <div t-if="doc.state=='draft'">
+                <span>No.Cliente:                 
+                   <span t-field="doc.numero_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>
+                </span>                
+              </div>
+              <div t-if="doc.state=='draft'">
+                <span>Nombre :
+                  <span t-field="doc.nombre_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>
+                </span>                
+              </div>
+              <!--Tabla para produtos aceptados-->
+              <t t-foreach="doc.tabla_devo" t-as="prodacep">
+                <div t-if="prodacep.estatus=='Aprovado'">
+                  <strong>Articulos Aceptados
+                    <span t-esc="doc.num_aprovados"/>                  
+                  </strong>
+                  <table class="table table-condensed">
+                    <thead>
+                      <tr>
+                        <th class="text-center">Estilo</th>
+                        <th class="text-center">Talla</th>
+                        <th class="text-center">Cantidad</th>
+                        <th class="text-center">Importe</th>
+                      </tr>
+                    </thead>
+                    <tbody class="sale_tbody">
+                      <t t-foreach="doc.tabla_devo" t-as="dl">
+                        <t t-if="dl.estatus=='Aprovado'">
+                          <tr>
+                            <td>
+                              <span t-field="dl.producto" />
+                            </td>
+                            <td class="text-center">
+                              <span></span>
+                            </td> 
+                            <td class="text-center">
+                               <span>1</span>
+                            </td>
+                            <td class="text-center">
+                              <span t-field="dl.precio_unico" />
+                            </td> 
+                          </tr>
+                        </t>
+                      </t>
+                    </tbody>
+                  </table>                 
+                </div>
+              </t> 
+              <!--Tabla para produtos Rechados por tiempo-->
+              <t t-foreach="doc.tabla_devo" t-as="prodrech">
+                <div t-if="prodrech.estatus=='Rechazado por tiempo'">
+                  <strong>Articulos Rechados por tiempo
+                    <span t-field="doc.num_rechazados" style="text-align:center; margin-top:2em; font-size:17px;"/>                  
+                  </strong>
+                  <table class="table table-condensed">
+                    <thead>
+                      <tr>
+                        <th class="text-center">Estilo</th>
+                        <th class="text-center">Talla</th>
+                        <th class="text-center">Cantidad</th>
+                      </tr>
+                    </thead>
+                    <tbody class="sale_tbody">
+                      <t t-foreach="doc.tabla_devo" t-as="dl">
+                        <t t-if="dl.estatus=='Rechazado por tiempo'">
+                          <tr>
+                            <td>
+                              <span t-field="dl.producto"/>
+                            </td>
+                            <td class="text-center">
+                              <span></span>
+                            </td> 
+                            <td class="text-center">
+                               <span>1</span>
+                            </td>
+                            <td class="text-center">
+                            </td> 
+                          </tr>
+                        </t>
+                      </t>
+                    </tbody>
+                  </table>                  
+                </div>
+              </t>
+                 <div t-if="doc.state=='draft'">
+                  <strong>Articulos Totales: </strong>     
+                </div>
+            </t>
           </div>
         </t>
       </t>
-    </t>                
+      
+      <t t-call="web.basic_layout">
+        <t t-foreach="docs" t-as="doc">
+          <div class="page">  
+             <!--Encabezado -->
+            <div  class="row">
+              <div class="col-3 text-left">
+                <span>Daniel Robleas</span>
+              </div>  
+              <div class="col-3 text-right">
+                <p t-field="doc.fecha_devolucion"/>  
+              </div>
+              <div style="text-align: center">
+                <span>
+                  Zapateria Platino S.A de C.V <br/>
+                  Prol.Pino Suares 1893 Col El vigia <br/>
+                  Zapopan,Jalisco C.P.45140 <br/>
+                  RFC:ZPL1212183K1
+                </span>
+              </div>
+            </div> 
+            <t t-if="doc.tipo_usuario== 'cliente'">
+              <div t-if="doc.state=='draft'">
+                <strong>No.Cliente:                 
+                   <span t-field="doc.numero_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>
+                </strong>                
+              </div>
+              <div t-if="doc.state =='draft'">
+                <strong>NOTA DE DEVOLUCION:
+                   <span t-field="doc.referencia" style="text-align:center; margin-top:2em; font-size:17px;"/>
+                </strong>
+              </div>
+              <div t-if="doc.state=='draft'">
+                <strong>Nombre :
+                  <span t-field="doc.nombre_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>
+                </strong>                
+              </div>
+              <!--Tabla para produtos Rechados por tiempo-->
+              <t t-foreach="doc.tabla_devo" t-as="prodrech">
+                <div t-if="prodrech.estatus=='Rechazado por tiempo'">
+                  <strong>Articulos Rechados por tiempo
+                    <span t-field="doc.num_rechazados" style="text-align:center; margin-top:2em; font-size:17px;"/>                  
+                  </strong>
+                  <table class="table table-condensed">
+                    <thead>
+                      <tr>
+                        <th class="text-center">Estilo</th>
+                        <th class="text-center">Talla</th>
+                        <th class="text-center">Cantidad</th>
+                      </tr>
+                    </thead>
+                    <tbody class="sale_tbody">
+                      <t t-foreach="doc.tabla_devo" t-as="dl">
+                        <t t-if="dl.estatus=='Rechazado por tiempo'">
+                          <tr>
+                            <td>
+                              <span t-field="dl.producto"/>
+                            </td>
+                            <td class="text-center">
+                              <span></span>
+                            </td> 
+                            <td class="text-center">
+                               <span>1</span>
+                            </td>
+                            <td class="text-center">
+                            </td> 
+                          </tr>
+                        </t>
+                      </t>
+                    </tbody>
+                  </table>                  
+                </div>
+              </t>
+              <!-- Tabla para productos rechazados por calidad -->
+              <t t-foreach="doc.tabla_devo" t-as="prodrech">
+                <div t-if="prodrech.motivo.name=='Rechazado por calidad'">
+                  <strong>Articulos Rechados por Calidad
+                    <span t-field="doc.num_rechazados" style="text-align:center; margin-top:2em; font-size:17px;"/>                  
+                  </strong>
+                  <table class="table table-condensed">
+                    <thead>
+                      <tr>
+                        <th class="text-center">Estilo</th>
+                        <th class="text-center">Talla</th>
+                        <th class="text-center">Cantidad</th>
+                      </tr>
+                    </thead>
+                    <tbody class="sale_tbody">
+                      <t t-foreach="doc.tabla_devo" t-as="dl">
+                        <t t-if="dl.motivo.name=='Rechazado por calidad'">
+                          <tr>
+                            <td>
+                              <span t-field="dl.producto"/>
+                            </td>
+                            <td class="text-center">
+                              <span></span>
+                            </td> 
+                            <td class="text-center">
+                               <span>1</span>
+                            </td>
+                            <td class="text-center">
+                            </td> 
+                          </tr>
+                        </t>
+                      </t>
+                    </tbody>
+                  </table>                  
+                </div>
+              </t>
+            </t>
+             <div t-if="doc.state=='draft'">
+                <strong>Articulos totales 2</strong>  
+            </div>
+          </div>
+        </t>
+      </t>
+    </t> 
+
   </template>
     
   <record id="paperformat_ticket" model="report.paperformat">
