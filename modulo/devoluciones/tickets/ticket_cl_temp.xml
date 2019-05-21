@@ -205,18 +205,28 @@
                   </table>                  
                 </div>
               </t>
-                 <div t-if="doc.state=='draft'">
-                  <strong>Articulos Totales: </strong>     
-                </div>
+                <div class="row">
+                  <div t-if="doc.state=='draft'" class="col-6 text-left"> 
+                    <strong>Articulos totales:
+                     <span t-esc="doc.num_aprovados+doc.num_rechazados"/> 
+                    </strong>
+                  </div>  
+                 <div t-if="doc.state=='draft'" class="col-6 text-right">
+                    <strong>Importe total</strong>
+                    <!--<span t-esc="sum(line.precio_unico for line in docs.tabla_devo)"/>-->
+                    <t t-esc="sum(docs.tabla_devo.filtered( lambda r: r.estatus == 'Aprovado').mapped('precio_unico')) " />
+                  </div>
+                 </div>
             </t>
           </div>
         </t>
       </t>
-      
+      <!--segundo ticket para el clientes solo de productos rechados-->
       <t t-call="web.basic_layout">
         <t t-foreach="docs" t-as="doc">
           <div class="page">  
              <!--Encabezado -->
+          <t t-if="doc.tipo_usuario== 'cliente'">
             <div  class="row">
               <div class="col-3 text-left">
                 <span>Daniel Robleas</span>
@@ -323,8 +333,12 @@
               </t>
             </t>
              <div t-if="doc.state=='draft'">
-                <strong>Articulos totales 2</strong>  
+                <strong>Articulos totales:
+                  <span t-field="doc.num_rechazados" style="text-align:center; margin-top:2em; font-size:17px;"/>   
+                </strong>  
             </div>
+              </t>
+
           </div>
         </t>
       </t>

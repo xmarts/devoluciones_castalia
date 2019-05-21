@@ -1,12 +1,26 @@
 # -*- coding: utf-8 -*-
-
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError, UserError
 from datetime import datetime, date, timedelta
+
 class Devoluciones(models.Model):
 	_name = 'model.devo'
+	
+	def _name_default(self):
+		cr = self.env.cr
+		cr.execute('select "id" from "model_devo" order by "id" desc limit 1')
+		id_returned = cr.fetchone()
+		if id_returned == None:
+			id_returned = (0,)
+		text = ''
+		pref = 'Dev-'
+		if ((max(id_returned) + 1)< 100):
+			text = pref + '00' + str(max(id_returned) + 1)
+		else:
+			text = pref + str(max(id_returned) + 1)
+		return text			
 
-	referencia = fields.Char(string="Numero", readonly=True, copy=False)
+	referencia = fields.Char(string="Numero", readonly=True, default = _name_default)
 	state = fields.Selection([('draft', 'Borrador'),('approve','Aprovado'),('done','Heho'),('reject','Rechazado')], default="draft")
 	tipo_usuario = fields.Selection([('cliente', 'Cliente'),('proveedor', 'Proveedor')], string="Tipo de usuario")
 	serie = fields.Char(string="Serie del producto")
@@ -16,7 +30,7 @@ class Devoluciones(models.Model):
 	ciudad_procedencia = fields.Char(string="Ciudad de procedencia")
 	codigo_postal = fields.Char(string="Codigo Postal")
 	fecha_devolucion = fields.Date(string="Fecha de devolucion", default=fields.Date.today())
-	nombre_cancelo = fields.Many2one('res.user', string="Cancelo")
+	nombre_cancelo = fields.Many2one('res.user', string="Cancelo",readonly = True)
 	lineas = fields.Integer(string="Lineas", default=0, compute="_get_lines")
 	salida = fields.Char(string="Salida")
 	num_aprovados = fields.Integer(string="Productos aprovados", compute="_get_result")
@@ -46,14 +60,6 @@ class Devoluciones(models.Model):
 		for record in self:
 			if record.tabla_devo:
 				self.lineas = 1
-
-	@api.model
-	def create(self, vals):
-		if vals.get('referencia', 'New') == 'New':
-			vals['referencia'] = self.env['ir.sequence'].next_by_code('model.devo') or 'New'
-			result = super(Devoluciones, self).create(vals)
-		return result	
-
 	@api.one
 	def buscar(self):
 		if self.tipo_usuario == 'cliente':
@@ -62,6 +68,7 @@ class Devoluciones(models.Model):
 				stock_venta = self.env['stock.picking'].search([('name', '=', serie_pro_venta.reference)], limit=1)
 				if stock_venta:
 					self.nombre_responsable = stock_venta.partner_id.id
+					self.numero_responsable = stock_venta.partner_id.ref
 					self.estado_procedencia = stock_venta.partner_id.state_id.id
 					self.ciudad_procedencia = stock_venta.partner_id.city
 					self.codigo_postal = stock_venta.partner_id.zip
@@ -165,75 +172,142 @@ class Devoluciones(models.Model):
 
 	@api.one
 	def aprovar(self):
-		for record in self:
-			productos_aprovados = 0
-			productos_rechazados = 0
-			for line in record.tabla_devo:
-				if line.estatus == 'Aprovado':
-					pedido = line.pedido
-					seriea = self.env['stock.move.line'].search([('lot_id', '=', line.serie.name)])
-					productos_aprovados = self.env['tabla.devo'].search([('estatus', '=', 'Aprovado'),('devolucion_id', '=', self.id)])
-				if line.estatus == 'Rechazado por tiempo':
-					serier = self.env['stock.move.line'].search([('lot_id', '=', line.serie.name)])
-					productos_rechazados = self.env['tabla.devo'].search([('estatus', '=', 'Rechazado por tiempo'),('devolucion_id', '=', self.id)])		
-			if productos_aprovados != 0:
-				unit = self.env['product.uom'].search([('name', '=', 'Unidad(es)')])
-				type_devo = self.env['stock.picking.type'].search([('devo_proveedor', '=', True)])
-				reference = self.env['stock.picking'].search([('name', '=', seriea.reference)], limit=1)
-				stock_obj = self.env['stock.picking']
-				stock_values = {
-					'partner_id': self.nombre_responsable.id,
-					'location_id': reference.location_id.id,
-					'location_dest_id': reference.location_dest_id.id,
-					'picking_type_id': type_devo.return_picking_type_id.id,
-					'origin': self.referencia,
-				}
-				stock_id = stock_obj.create(stock_values)
-				if stock_id:
-					for line in productos_aprovados:
-						qty = 1
-						self.env['stock.move'].create({
-							'location_id': reference.location_id.id,
-							'location_dest_id': reference.location_dest_id.id,
-							'product_uom_qty': qty,
-							'name': line.producto.name,
-							'product_id': line.producto.id,
-							'state': 'draft',
-							'product_uom': unit.id,
-							'picking_id': stock_id.id,
-							'company_id': reference.company_id.id, 
-						})		
+		if self.tipo_usuario == 'proveedor':
+			for record in self:
+				productos_aprovados = 0
+				productos_rechazados = 0
+				for line in record.tabla_devo:
+					if line.estatus == 'Aprovado':
+						pedido = line.pedido
+						seriea = self.env['stock.move.line'].search([('lot_id', '=', line.serie.name)],limit=1)
+						productos_aprovados = self.env['tabla.devo'].search([('estatus', '=', 'Aprovado'),('devolucion_id', '=', self.id)])
+					if line.estatus == 'Rechazado por tiempo':
+						serier = self.env['stock.move.line'].search([('lot_id', '=', line.serie.name)],limit=1)
+						productos_rechazados = self.env['tabla.devo'].search([('estatus', '=', 'Rechazado por tiempo'),('devolucion_id', '=', self.id)])		
+				if productos_aprovados != 0:
+					unit = self.env['product.uom'].search([('name', '=', 'Unidad(es)')])
+					type_devo = self.env['stock.picking.type'].search([('devo_proveedor', '=', True)])
+					reference = self.env['stock.picking'].search([('name', '=', seriea.reference)], limit=1)
+					stock_obj = self.env['stock.picking']
+					stock_values = {
+						'partner_id': self.nombre_responsable.id,
+						'location_id': reference.location_id.id,
+						'location_dest_id': reference.location_dest_id.id,
+						'picking_type_id': type_devo.return_picking_type_id.id,
+						'origin': self.referencia,
+					}
+					stock_id = stock_obj.create(stock_values)
+					if stock_id:
+						for line in productos_aprovados:
+							qty = 1
+							self.env['stock.move'].create({
+								'location_id': reference.location_id.id,
+								'location_dest_id': reference.location_dest_id.id,
+								'product_uom_qty': qty,
+								'name': line.producto.name,
+								'product_id': line.producto.id,
+								'state': 'draft',
+								'product_uom': unit.id,
+								'picking_id': stock_id.id,
+								'company_id': reference.company_id.id, 
+							})		
 
-			if productos_rechazados != 0:
-				unit = self.env['product.uom'].search([('name', '=', 'Unidad(es)')])
-				type_devo = self.env['stock.picking.type'].search([('devo_rechazadas', '=', True)])
-				reference = self.env['stock.picking'].search([('name', '=', serier.reference)], limit=1)
-				stock_obj = self.env['stock.picking']
-				stock_values = {
-					'partner_id': self.nombre_responsable.id,
-					'location_id': reference.location_id.id,
-					'location_dest_id': reference.location_dest_id.id,
-					'picking_type_id': type_devo.return_picking_type_id.id,
-					'origin': self.referencia,
-				}
-				stock_id = stock_obj.create(stock_values)
-				if stock_id:
-					for line in productos_rechazados:
-						qty = 1
-						self.env['stock.move'].create({
-							'location_id': reference.location_id.id,
-							'location_dest_id': reference.location_dest_id.id,
-							'product_uom_qty': qty,
-							'name': line.producto.name,
-							'product_id': line.producto.id,
-							'state': 'draft',
-							'product_uom': unit.id,
-							'picking_id': stock_id.id,
-							'company_id': reference.company_id.id, 
-						})
-				
-			
+				if productos_rechazados != 0:
+					unit = self.env['product.uom'].search([('name', '=', 'Unidad(es)')])
+					type_devo = self.env['stock.picking.type'].search([('devo_rechazadas', '=', True)])
+					reference = self.env['stock.picking'].search([('name', '=', serier.reference)], limit=1)
+					stock_obj = self.env['stock.picking']
+					stock_values = {
+						'partner_id': self.nombre_responsable.id,
+						'location_id': reference.location_id.id,
+						'location_dest_id': reference.location_dest_id.id,
+						'picking_type_id': type_devo.return_picking_type_id.id,
+						'origin': self.referencia,
+					}
+					stock_id = stock_obj.create(stock_values)
+					if stock_id:
+						for line in productos_rechazados:
+							qty = 1
+							self.env['stock.move'].create({
+								'location_id': reference.location_id.id,
+								'location_dest_id': reference.location_dest_id.id,
+								'product_uom_qty': qty,
+								'name': line.producto.name,
+								'product_id': line.producto.id,
+								'state': 'draft',
+								'product_uom': unit.id,
+								'picking_id': stock_id.id,
+								'company_id': reference.company_id.id, 
+							})
+		else:
+			for record in self:
+				productos_aprovados = 0
+				productos_rechazados = 0
+				for line in record.tabla_devo:
+					if line.estatus == 'Aprovado':
+						pedido = line.pedido
+						seriea = self.env['stock.move.line'].search([('lot_id', '=', line.serie.name)],limit=1)
+						productos_aprovados = self.env['tabla.devo'].search([('estatus', '=', 'Aprovado'),('devolucion_id', '=', self.id)])
+					if line.estatus == 'Rechazado por tiempo':
+						serier = self.env['stock.move.line'].search([('lot_id', '=', line.serie.name)],limit=1)
+						productos_rechazados = self.env['tabla.devo'].search([('estatus', '=', 'Rechazado por tiempo'),('devolucion_id', '=', self.id)])		
+				if productos_aprovados != 0:
+					unit = self.env['product.uom'].search([('name', '=', 'Unidad(es)')])
+					type_devo = self.env['stock.picking.type'].search([('devo_cliente', '=', True)])
+					reference = self.env['stock.picking'].search([('name', '=', seriea.reference)], limit=1)
+					stock_obj = self.env['stock.picking']
+					stock_values = {
+						'partner_id': self.nombre_responsable.id,
+						'location_id': reference.location_id.id,
+						'location_dest_id': reference.location_dest_id.id,
+						'picking_type_id': type_devo.return_picking_type_id.id,
+						'origin': self.referencia,
+					}
+					stock_id = stock_obj.create(stock_values)
+					if stock_id:
+						for line in productos_aprovados:
+							qty = 1
+							self.env['stock.move'].create({
+								'location_id': reference.location_id.id,
+								'location_dest_id': reference.location_dest_id.id,
+								'product_uom_qty': qty,
+								'name': line.producto.name,
+								'product_id': line.producto.id,
+								'state': 'draft',
+								'product_uom': unit.id,
+								'picking_id': stock_id.id,
+								'company_id': reference.company_id.id, 
+							})		
 
+				if productos_rechazados != 0:
+					unit = self.env['product.uom'].search([('name', '=', 'Unidad(es)')])
+					type_devo = self.env['stock.picking.type'].search([('devo_rechadoclientes', '=', True)])
+					reference = self.env['stock.picking'].search([('name', '=', serier.reference)], limit=1)
+					stock_obj = self.env['stock.picking']
+					stock_values = {
+						'partner_id': self.nombre_responsable.id,
+						'location_id': reference.location_id.id,
+						'location_dest_id': reference.location_dest_id.id,
+						'picking_type_id': type_devo.return_picking_type_id.id,
+						'origin': self.referencia,
+					}
+					stock_id = stock_obj.create(stock_values)
+					if stock_id:
+						for line in productos_rechazados:
+							qty = 1
+							self.env['stock.move'].create({
+								'location_id': reference.location_id.id,
+								'location_dest_id': reference.location_dest_id.id,
+								'product_uom_qty': qty,
+								'name': line.producto.name,
+								'product_id': line.producto.id,
+								'state': 'draft',
+								'product_uom': unit.id,
+								'picking_id': stock_id.id,
+								'company_id': reference.company_id.id, 
+							})
+
+								
 class TablaDevoluciones(models.Model):
 	_name = "tabla.devo"
 
@@ -304,6 +378,4 @@ class StockPicking(models.Model):
 	@api.one
 	def button_scrap(self):
 		for line in self.move_lines:
-			raise ValidationError(line.product_uom.id)		
-
-		
+			raise ValidationError(line.product_uom.id)
