@@ -7,8 +7,10 @@
       <field name="arch" type="xml">
         <form>
           <header>
-            <button string="Aprovar" name="aprovar" type="object" class="oe_highlight" attrs="{'invisible':[('lineas', '=', 0)]}"/>
-            <button string="Buscar" name="buscar" type="object" class="oe_highlight"/>
+            <button string="Aprovar" name="aprovar" type="object"  class="oe_highlight" attrs="{'invisible':[('lineas', '=', 0)]}"/>
+            <button string="Buscar" name="buscar" type="object"  states='draft' class="oe_highlight"/>
+            <button string="hecho" name="approved" type="object"  states='approve' class="oe_highlight"/>
+            <button type="object" name="action_rma_send"  string="Send RMA By Mail" states='approve' class="oe_highlight"/>
             <field name="state" widget="statusbar"/>
           </header>
           <sheet>
@@ -30,6 +32,7 @@
                 <field name="codigo_postal"/>
                 <field name="fecha_devolucion"/>
                 <field name="nombre_cancelo"/>
+                <field name="id_nota"/>
                 <field name="salida" invisible="1"/>
                 <field name="lineas" invisible="1"/>
               </group>
@@ -134,16 +137,7 @@
       </field>
     </record>
 
-    <record id="number_seq" model="ir.sequence">
-      <field name="name">Identificador</field>
-      <field name="code">model.devo</field>
-      <field name="active">True</field>
-      <field name="prefix">DEV/</field>
-      <field name="number_increment">1</field>
-      <field name="number_next">1</field>
-      <field name="padding">3</field>
-      <field name="implementation">standard</field>
-    </record>
+
 
   </data>
 </odoo>

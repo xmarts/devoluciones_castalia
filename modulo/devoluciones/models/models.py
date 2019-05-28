@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError, UserError
 from datetime import datetime, date, timedelta
-
 class Devoluciones(models.Model):
 	_name = 'model.devo'
+	_inherit = ['mail.thread']
 	
 	def _name_default(self):
 		cr = self.env.cr
@@ -38,6 +39,31 @@ class Devoluciones(models.Model):
 	total_productos = fields.Integer(string="Total productos escaneados", compute="_get_result")
 	tabla_devo = fields.One2many('tabla.devo', 'devolucion_id')
 	verificado = fields.Boolean(string="Verificador")
+	id_nota = fields.Many2one('account.invoice',string="relacion nota" )
+
+
+	def action_rma_send(self):
+		self.ensure_one()
+		template = self.env.ref('Devoluciones.minuta_email_orden', False)
+		compose_form = self.env.ref('mail.email_compose_message_wizard_form', False)
+		ctx = dict(
+	    	default_model='model.devo',
+	    	default_res_id=self.id,
+	    	default_use_template=bool(template),
+	    	default_template_id=template and template.id or False,
+	    	default_composition_mode='comment',
+	    	force_email=True
+		)
+		return {
+	    	'type': 'ir.actions.act_window',
+	    	'view_type': 'form',
+	    	'view_mode': 'form',
+	    	'res_model': 'mail.compose.message',
+	    	'views': [(compose_form.id, 'form')],
+	    	'view_id': False,
+	    	'target': 'new',
+	    	'context': ctx,
+		}
 
 	@api.depends('tabla_devo')
 	def _get_result(self):
@@ -239,6 +265,7 @@ class Devoluciones(models.Model):
 								'picking_id': stock_id.id,
 								'company_id': reference.company_id.id, 
 							})
+				self.write({'state':'approve'})			
 		else:
 			for record in self:
 				productos_aprovados = 0
@@ -306,6 +333,86 @@ class Devoluciones(models.Model):
 								'picking_id': stock_id.id,
 								'company_id': reference.company_id.id, 
 							})
+				self.write({'state':'approve'})		
+	@api.multi
+	def approved(self):
+		if self.tabla_devo:
+			if self.tipo_usuario == 'proveedor':
+				aprovados = 0
+				rechazados = 0
+				for line in self.tabla_devo:
+					print(line.estatus)
+					if line.estatus == 'Aprovado':
+						aprovados += 2
+					print(aprovados)
+					aprovados += aprovados
+					if line.estatus == 'Rechazado por tiempo':
+						rechazados += 1
+				if aprovados > 0:
+					productos = self.env['tabla.devo'].search([('estatus', '=', 'Aprovado'),('devolucion_id','=',self.id)])
+					if productos:
+						fecha_devolucion = date.today()
+						refund_obj = self.env['account.invoice']
+						refund_values = {
+							'partner_id': self.nombre_responsable.id,
+							'origin': self.referencia,
+							'reference': self.nombre_responsable.name,
+							'date_invoice': fecha_devolucion,
+							'type': 'in_refund',
+						}
+						refund_id = refund_obj.create(refund_values)
+						if refund_id:
+							for x in productos:
+								refund_line_obj = self.env['account.invoice.line']
+								refund_line_values = {
+									'product_id': x.producto.id,
+									'name': x.producto.name,
+									'account_id': 1,
+									'quantity': 1,
+									'price_unit': x.precio_unico,
+									'invoice_id': refund_id.id,
+								}
+								refund_line_id = refund_line_obj.create(refund_line_values)
+								refund_id.action_invoice_open()
+						self.id_nota = refund_id.id
+			else:
+				aprovados = 0
+				rechazados = 0
+				for line in self.tabla_devo:
+					print(line.estatus)
+					if line.estatus == 'Aprovado':
+						aprovados += 2
+					print(aprovados)
+					aprovados += aprovados
+					if line.estatus == 'Rechazado por tiempo':
+						rechazados += 1
+				if aprovados > 0:
+					productos = self.env['tabla.devo'].search([('estatus', '=', 'Aprovado'),('devolucion_id','=',self.id)])
+					if productos:
+						fecha_devolucion = date.today()
+						refund_obj = self.env['account.invoice']
+						refund_values = {
+							'partner_id': self.nombre_responsable.id,
+							'origin': self.referencia,
+							'reference': self.nombre_responsable.name,
+							'date_invoice': fecha_devolucion,
+							'type': 'out_refund',
+						}
+						refund_id = refund_obj.create(refund_values)
+						if refund_id:
+							for x in productos:
+								refund_line_obj = self.env['account.invoice.line']
+								refund_line_values = {
+									'product_id': x.producto.id,
+									'name': x.producto.name,
+									'account_id': 1,
+									'quantity': 1,
+									'price_unit': x.precio_unico,
+									'invoice_id': refund_id.id,
+								}
+								refund_line_id = refund_line_obj.create(refund_line_values)
+								refund_id.action_invoice_open()
+						self.id_nota = refund_id.id			
 
 								
 class TablaDevoluciones(models.Model):
@@ -378,4 +485,6 @@ class StockPicking(models.Model):
 	@api.one
 	def button_scrap(self):
 		for line in self.move_lines:
-			raise ValidationError(line.product_uom.id)
+			raise ValidationError(line.product_uom.id)		
+
+		
