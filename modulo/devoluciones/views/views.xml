@@ -10,7 +10,7 @@
             <button string="Aprovar" name="aprovar" type="object"  class="oe_highlight" attrs="{'invisible':[('lineas', '=', 0)]}"/>
             <button string="Buscar" name="buscar" type="object"  states='draft' class="oe_highlight"/>
             <button string="hecho" name="approved" type="object"  states='approve' class="oe_highlight"/>
-            <button type="object" name="action_rma_send"  string="Send RMA By Mail" states='approve' class="oe_highlight"/>
+            <button type="object" name="action_rma_send"  string="Send RMA By Mail" states='done' class="oe_highlight"/>
             <field name="state" widget="statusbar"/>
           </header>
           <sheet>
@@ -32,7 +32,8 @@
                 <field name="codigo_postal"/>
                 <field name="fecha_devolucion"/>
                 <field name="nombre_cancelo"/>
-                <field name="id_nota"/>
+                <field name="id_nota" invisible="1"/>
+                <field name="conf_correo" invisible="1"/>
                 <field name="salida" invisible="1"/>
                 <field name="lineas" invisible="1"/>
               </group>

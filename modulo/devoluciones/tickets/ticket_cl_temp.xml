@@ -1,4 +1,5 @@
-<odoo> 
+<odoo>
+  
   <template id="ticke_clien_devo">
     <t t-call="web.html_container">
       <t t-call="web.basic_layout">
@@ -23,33 +24,33 @@
             </div>
             <!--Estructura para ticket proveedor-->
             <t t-if="doc.tipo_usuario== 'proveedor' ">
-              <div t-if="doc.state =='draft'">
+              <div t-if="doc.state =='done'">
                 <strong>No.Nota de credito:
-                  <span t-field=""/>
+                   <span t-field="doc.id_nota" style="text-align:center; margin-top:2em; font-size:17px;"/>
                 </strong>  
               </div>
-              <div t-if="doc.state =='draft'">
+              <div t-if="doc.state =='done'">
                 <strong>Salida(dev.proveedor):
                   <span t-field="doc.salida" style="text-align:center; margin-top:2em; font-size:17px;"/>
                 </strong>
               </div> 
-              <div t-if="doc.state =='draft'">
+              <div t-if="doc.state =='done'">
                 <strong>NOTA DE DEVOLUCION:
                    <span t-field="doc.referencia" style="text-align:center; margin-top:2em; font-size:17px;"/>
                 </strong>
               </div>
-              <div t-if="doc.state=='draft'">
+              <div t-if="doc.state=='done'">
                 <strong>No.Proveedor:
                   <span t-field="doc.numero_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>  
                 </strong>
               </div>
-              <div t-if="doc.state=='draft'">
+              <div t-if="doc.state=='done'">
                 <strong>Nombre:
                   <span t-field="doc.nombre_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>  
                 </strong>
               </div>
               <!--tabla para productos de proveedor-->
-              <div t-if="doc.state=='draft'">
+              <div t-if="doc.state=='done'">
                 <table class="table table-condensed">
                   <thead>
                     <tr>
@@ -80,7 +81,7 @@
                 </table>
               </div>
               <!--tabla para proveedor motivos y series -->  
-              <div t-if="doc.state=='draft'"> 
+              <div t-if="doc.state=='done'"> 
                 <table class="table table-condensed">
                   <thead>
                     <tr>
@@ -103,12 +104,12 @@
                 </table>
               </div>
               <div class="row">
-                <div t-if="doc.state=='draft'" class="col-6 text-left"> 
+                <div t-if="doc.state=='done'" class="col-6 text-left"> 
                   <strong>Articulos totales:
                      <span t-esc="doc.num_aprovados+doc.num_rechazados"/> 
                   </strong>
                 </div>  
-               <div t-if="doc.state=='draft'" class="col-6 text-right">
+               <div t-if="doc.state=='done'" class="col-6 text-right">
                   <strong>Importe total</strong>
                   <span t-esc="sum(line.precio_unico for line in docs.tabla_devo)"/>
                 </div>
@@ -116,29 +117,30 @@
               </div>
             </t>   
 
+
+
             <!--estructura para ticket de clientes-->
             <t t-if="doc.tipo_usuario== 'cliente'">
-              <div t-if="doc.state =='draft'">
+              <div t-if="doc.state =='done'">
                 <strong>NOTA DE DEVOLUCION:
                    <span t-field="doc.referencia" style="text-align:center; margin-top:2em; font-size:17px;"/>
                 </strong>
               </div>
-              <div t-if="doc.state=='draft'">
+              <div t-if="doc.state=='done'">
                 <span>No.Cliente:                 
                    <span t-field="doc.numero_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>
                 </span>                
               </div>
-              <div t-if="doc.state=='draft'">
+              <div t-if="doc.state=='done'">
                 <span>Nombre :
                   <span t-field="doc.nombre_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>
                 </span>                
               </div>
               <!--Tabla para produtos aceptados-->
-              <t t-foreach="doc.tabla_devo" t-as="prodacep">
-                <div t-if="prodacep.estatus=='Aprovado'">
-                  <strong>Articulos Aceptados
-                    <span t-esc="doc.num_aprovados"/>                  
-                  </strong>
+              <div>
+                <strong>Articulos Aceptados
+                  <span t-field="doc.num_aprovados"/>                  
+                </strong>
                   <table class="table table-condensed">
                     <thead>
                       <tr>
@@ -156,7 +158,7 @@
                               <span t-field="dl.producto" />
                             </td>
                             <td class="text-center">
-                              <span></span>
+                              <span>23</span>
                             </td> 
                             <td class="text-center">
                                <span>1</span>
@@ -168,52 +170,50 @@
                         </t>
                       </t>
                     </tbody>
-                  </table>                 
-                </div>
-              </t> 
+                  </table>  
+                </div>             
+              
               <!--Tabla para produtos Rechados por tiempo-->
-              <t t-foreach="doc.tabla_devo" t-as="prodrech">
-                <div t-if="prodrech.estatus=='Rechazado por tiempo'">
-                  <strong>Articulos Rechados por tiempo
-                    <span t-field="doc.num_rechazados" style="text-align:center; margin-top:2em; font-size:17px;"/>                  
-                  </strong>
-                  <table class="table table-condensed">
-                    <thead>
-                      <tr>
-                        <th class="text-center">Estilo</th>
-                        <th class="text-center">Talla</th>
-                        <th class="text-center">Cantidad</th>
-                      </tr>
-                    </thead>
-                    <tbody class="sale_tbody">
-                      <t t-foreach="doc.tabla_devo" t-as="dl">
-                        <t t-if="dl.estatus=='Rechazado por tiempo'">
-                          <tr>
-                            <td>
-                              <span t-field="dl.producto"/>
-                            </td>
-                            <td class="text-center">
-                              <span></span>
-                            </td> 
-                            <td class="text-center">
-                               <span>1</span>
-                            </td>
-                            <td class="text-center">
-                            </td> 
-                          </tr>
-                        </t>
+              <div>
+                <strong>Articulos Rechados por tiempo
+                  <span t-field="doc.num_rechazados" style="text-align:center; margin-top:2em; font-size:17px;"/>                  
+                </strong>
+                <table class="table table-condensed">
+                  <thead>
+                    <tr>
+                      <th class="text-center">Estilo</th>
+                      <th class="text-center">Talla</th>
+                      <th class="text-center">Cantidad</th>
+                    </tr>
+                  </thead>
+                  <tbody class="sale_tbody">
+                    <t t-foreach="doc.tabla_devo" t-as="dl">
+                      <t t-if="dl.estatus=='Rechazado por tiempo'">
+                        <tr>
+                          <td>
+                            <span t-field="dl.producto"/>
+                          </td>
+                          <td class="text-center">
+                            <span></span>
+                          </td> 
+                          <td class="text-center">
+                             <span>1</span>
+                          </td>
+                          <td class="text-center">
+                          </td> 
+                        </tr>
                       </t>
-                    </tbody>
-                  </table>                  
+                    </t>
+                  </tbody>
+                </table>                  
                 </div>
-              </t>
                 <div class="row">
-                  <div t-if="doc.state=='draft'" class="col-6 text-left"> 
+                  <div t-if="doc.state=='done'" class="col-6 text-left"> 
                     <strong>Articulos totales:
                      <span t-esc="doc.num_aprovados+doc.num_rechazados"/> 
                     </strong>
                   </div>  
-                 <div t-if="doc.state=='draft'" class="col-6 text-right">
+                 <div t-if="doc.state=='done'" class="col-6 text-right">
                     <strong>Importe total</strong>
                     <!--<span t-esc="sum(line.precio_unico for line in docs.tabla_devo)"/>-->
                     <t t-esc="sum(docs.tabla_devo.filtered( lambda r: r.estatus == 'Aprovado').mapped('precio_unico')) " />
@@ -224,7 +224,7 @@
         </t>
       </t>
       <!--segundo ticket para el clientes solo de productos rechados-->
-      <t t-call="web.basic_layout">
+       <t t-call="web.basic_layout">
         <t t-foreach="docs" t-as="doc">
           <div class="page">  
              <!--Encabezado -->
@@ -246,95 +246,91 @@
               </div>
             </div> 
             <t t-if="doc.tipo_usuario== 'cliente'">
-              <div t-if="doc.state=='draft'">
+              <div t-if="doc.state=='done'">
                 <strong>No.Cliente:                 
                    <span t-field="doc.numero_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>
                 </strong>                
               </div>
-              <div t-if="doc.state =='draft'">
+              <div t-if="doc.state =='done'">
                 <strong>NOTA DE DEVOLUCION:
                    <span t-field="doc.referencia" style="text-align:center; margin-top:2em; font-size:17px;"/>
                 </strong>
               </div>
-              <div t-if="doc.state=='draft'">
+              <div t-if="doc.state=='done'">
                 <strong>Nombre :
                   <span t-field="doc.nombre_responsable" style="text-align:center; margin-top:2em; font-size:17px;"/>
                 </strong>                
               </div>
               <!--Tabla para produtos Rechados por tiempo-->
-              <t t-foreach="doc.tabla_devo" t-as="prodrech">
-                <div t-if="prodrech.estatus=='Rechazado por tiempo'">
-                  <strong>Articulos Rechados por tiempo
-                    <span t-field="doc.num_rechazados" style="text-align:center; margin-top:2em; font-size:17px;"/>                  
-                  </strong>
-                  <table class="table table-condensed">
-                    <thead>
-                      <tr>
-                        <th class="text-center">Estilo</th>
-                        <th class="text-center">Talla</th>
-                        <th class="text-center">Cantidad</th>
-                      </tr>
-                    </thead>
-                    <tbody class="sale_tbody">
-                      <t t-foreach="doc.tabla_devo" t-as="dl">
-                        <t t-if="dl.estatus=='Rechazado por tiempo'">
-                          <tr>
-                            <td>
-                              <span t-field="dl.producto"/>
-                            </td>
-                            <td class="text-center">
-                              <span></span>
-                            </td> 
-                            <td class="text-center">
-                               <span>1</span>
-                            </td>
-                            <td class="text-center">
-                            </td> 
-                          </tr>
-                        </t>
-                      </t>
-                    </tbody>
-                  </table>                  
-                </div>
-              </t>
+              <div>
+                <strong>Articulos Rechados por tiempo :
+                  <span t-field="doc.num_rechazados" style="text-align:center; margin-top:2em; font-size:17px;"/>                  
+                </strong>
+                <table class="table table-condensed">
+                  <thead>
+                    <tr>
+                      <th class="text-center">Estilo</th>
+                      <th class="text-center">Talla</th>
+                      <th class="text-center">Cantidad</th>
+                    </tr>
+                  </thead>
+                  <tbody class="sale_tbody">
+                    <t t-foreach="doc.tabla_devo" t-as="dl">
+                      <t t-if="dl.estatus=='Rechazado por tiempo'">
+                        <tr>
+                          <td>
+                            <span t-field="dl.producto"/>
+                          </td>
+                          <td class="text-center">
+                            <span></span>
+                          </td> 
+                          <td class="text-center">
+                             <span>1</span>
+                          </td>
+                          <td class="text-center">
+                          </td> 
+                        </tr>
+                      </t> 
+                    </t>
+                  </tbody>
+                </table>                  
+              </div>
               <!-- Tabla para productos rechazados por calidad -->
-              <t t-foreach="doc.tabla_devo" t-as="prodrech">
-                <div t-if="prodrech.motivo.name=='Rechazado por calidad'">
-                  <strong>Articulos Rechados por Calidad
-                    <span t-field="doc.num_rechazados" style="text-align:center; margin-top:2em; font-size:17px;"/>                  
-                  </strong>
-                  <table class="table table-condensed">
-                    <thead>
-                      <tr>
-                        <th class="text-center">Estilo</th>
-                        <th class="text-center">Talla</th>
-                        <th class="text-center">Cantidad</th>
-                      </tr>
-                    </thead>
-                    <tbody class="sale_tbody">
-                      <t t-foreach="doc.tabla_devo" t-as="dl">
-                        <t t-if="dl.motivo.name=='Rechazado por calidad'">
-                          <tr>
-                            <td>
-                              <span t-field="dl.producto"/>
-                            </td>
-                            <td class="text-center">
-                              <span></span>
-                            </td> 
-                            <td class="text-center">
-                               <span>1</span>
-                            </td>
-                            <td class="text-center">
-                            </td> 
-                          </tr>
-                        </t>
+              <div >
+                <strong>Articulos Rechados por Calidad :
+                  <span t-field="doc.num_rechazados" style="text-align:center; margin-top:2em; font-size:17px;"/>                  
+                </strong>
+                <table class="table table-condensed">
+                  <thead>
+                    <tr>
+                      <th class="text-center">Estilo</th>
+                      <th class="text-center">Talla</th>
+                      <th class="text-center">Cantidad</th>
+                    </tr>
+                  </thead>
+                  <tbody class="sale_tbody">
+                    <t t-foreach="doc.tabla_devo" t-as="dl">
+                      <t t-if="dl.motivo.name=='Rechazado por calidad'">
+                        <tr>
+                          <td>
+                            <span t-field="dl.producto"/>
+                          </td>
+                          <td class="text-center">
+                            <span></span>
+                          </td> 
+                          <td class="text-center">
+                             <span>1</span>
+                          </td>
+                          <td class="text-center">
+                          </td> 
+                        </tr>
                       </t>
-                    </tbody>
-                  </table>                  
-                </div>
-              </t>
+                    </t>
+                  </tbody>
+                </table>                  
+              </div>
             </t>
-             <div t-if="doc.state=='draft'">
+             <div t-if="doc.state=='done'">
                 <strong>Articulos totales:
                   <span t-field="doc.num_rechazados" style="text-align:center; margin-top:2em; font-size:17px;"/>   
                 </strong>  

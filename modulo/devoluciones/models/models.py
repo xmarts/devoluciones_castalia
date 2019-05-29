@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError, UserError
 from datetime import datetime, date, timedelta
@@ -31,7 +30,7 @@ class Devoluciones(models.Model):
 	ciudad_procedencia = fields.Char(string="Ciudad de procedencia")
 	codigo_postal = fields.Char(string="Codigo Postal")
 	fecha_devolucion = fields.Date(string="Fecha de devolucion", default=fields.Date.today())
-	nombre_cancelo = fields.Many2one('res.user', string="Cancelo",readonly = True)
+	nombre_cancelo = fields.Many2one('res.users', string="Cancelo",readonly = True)
 	lineas = fields.Integer(string="Lineas", default=0, compute="_get_lines")
 	salida = fields.Char(string="Salida")
 	num_aprovados = fields.Integer(string="Productos aprovados", compute="_get_result")
@@ -39,7 +38,8 @@ class Devoluciones(models.Model):
 	total_productos = fields.Integer(string="Total productos escaneados", compute="_get_result")
 	tabla_devo = fields.One2many('tabla.devo', 'devolucion_id')
 	verificado = fields.Boolean(string="Verificador")
-	id_nota = fields.Many2one('account.invoice',string="relacion nota" )
+	id_nota = fields.Many2one('account.invoice',string="relacion nota", readonly= True )
+	conf_correo = fields.Boolean(string="confirmar correo" )
 
 
 	def action_rma_send(self):
@@ -47,22 +47,25 @@ class Devoluciones(models.Model):
 		template = self.env.ref('Devoluciones.minuta_email_orden', False)
 		compose_form = self.env.ref('mail.email_compose_message_wizard_form', False)
 		ctx = dict(
-	    	default_model='model.devo',
-	    	default_res_id=self.id,
-	    	default_use_template=bool(template),
-	    	default_template_id=template and template.id or False,
-	    	default_composition_mode='comment',
-	    	force_email=True
+			default_model='model.devo',
+			default_res_id=self.id,
+			default_use_template=bool(template),
+			default_template_id=template and template.id or False,
+			default_composition_mode='comment',
+			force_email=True
 		)
+		
+		self.conf_correo = True
 		return {
-	    	'type': 'ir.actions.act_window',
-	    	'view_type': 'form',
-	    	'view_mode': 'form',
-	    	'res_model': 'mail.compose.message',
-	    	'views': [(compose_form.id, 'form')],
-	    	'view_id': False,
-	    	'target': 'new',
-	    	'context': ctx,
+			'type': 'ir.actions.act_window',
+			'view_type': 'form',
+			'view_mode': 'form',
+			'res_model': 'mail.compose.message',
+			'views': [(compose_form.id, 'form')],
+			'view_id': False,
+			'target': 'new',
+			'context': ctx,
+
 		}
 
 	@api.depends('tabla_devo')
@@ -341,10 +344,8 @@ class Devoluciones(models.Model):
 				aprovados = 0
 				rechazados = 0
 				for line in self.tabla_devo:
-					print(line.estatus)
 					if line.estatus == 'Aprovado':
 						aprovados += 2
-					print(aprovados)
 					aprovados += aprovados
 					if line.estatus == 'Rechazado por tiempo':
 						rechazados += 1
@@ -375,14 +376,15 @@ class Devoluciones(models.Model):
 								refund_line_id = refund_line_obj.create(refund_line_values)
 								refund_id.action_invoice_open()
 						self.id_nota = refund_id.id
+						self.write({'state':'done'})
+				else:
+					self.write({'state':'reject'})		
 			else:
 				aprovados = 0
 				rechazados = 0
 				for line in self.tabla_devo:
-					print(line.estatus)
 					if line.estatus == 'Aprovado':
 						aprovados += 2
-					print(aprovados)
 					aprovados += aprovados
 					if line.estatus == 'Rechazado por tiempo':
 						rechazados += 1
@@ -412,7 +414,12 @@ class Devoluciones(models.Model):
 								}
 								refund_line_id = refund_line_obj.create(refund_line_values)
 								refund_id.action_invoice_open()
-						self.id_nota = refund_id.id			
+						self.id_nota = refund_id.id
+						self.write({'state':'done'})	
+
+				else:
+					self.nombre_cancelo = self.env.user.id
+					self.write({'state':'reject'})					
 
 								
 class TablaDevoluciones(models.Model):
