@@ -138,6 +138,16 @@
       </field>
     </record>
 
+    
+    <record id="action_vista_devo_inventario" model="ir.actions.act_window">
+      <field name="name">Modulo devoluciones</field>
+      <field name="res_model">model.devo</field>
+      <field name="view_mode">tree,form</field>
+    </record>
+    <menuitem 
+      id="tools_devoluciones" name="Devoluciones"
+      parent="stock.menu_stock_root" sequence="0" action="action_vista_devo_inventario"/>
+
 
 
   </data>
