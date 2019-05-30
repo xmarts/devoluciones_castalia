@@ -1,5 +1,4 @@
-<odoo>
-  
+<odoo> 
   <template id="ticke_clien_devo">
     <t t-call="web.html_container">
       <t t-call="web.basic_layout">
@@ -7,12 +6,14 @@
           <div class="page">  
              <!--Encabezado -->
             <div  class="row">
-              <div class="col-3 text-left">
-                <span>Daniel Robleas</span>
-              </div>  
-              <div class="col-3 text-right">
-                <p t-field="doc.fecha_devolucion"/>  
-              </div>
+          
+                <div style="float:left; text-align:left;">
+                  <p>Daniel Robleas</p>
+                </div>
+                <div style="float:right; text-align:right;">
+                  <p t-field="doc.fecha_devolucion"/>  
+                </div>
+              <br/><br/>
               <div style="text-align: center">
                 <span>
                   Zapateria Platino S.A de C.V <br/>
@@ -104,12 +105,12 @@
                 </table>
               </div>
               <div class="row">
-                <div t-if="doc.state=='done'" class="col-6 text-left"> 
+                <div t-if="doc.state=='done'"  style="float:left; text-align:left;"> 
                   <strong>Articulos totales:
                      <span t-esc="doc.num_aprovados+doc.num_rechazados"/> 
                   </strong>
                 </div>  
-               <div t-if="doc.state=='done'" class="col-6 text-right">
+               <div t-if="doc.state=='done'" style="float:right; text-align:right;">
                   <strong>Importe total</strong>
                   <span t-esc="sum(line.precio_unico for line in docs.tabla_devo)"/>
                 </div>
@@ -208,12 +209,12 @@
                 </table>                  
                 </div>
                 <div class="row">
-                  <div t-if="doc.state=='done'" class="col-6 text-left"> 
+                  <div t-if="doc.state=='done'" style="float:left; text-align:left;"> 
                     <strong>Articulos totales:
                      <span t-esc="doc.num_aprovados+doc.num_rechazados"/> 
                     </strong>
                   </div>  
-                 <div t-if="doc.state=='done'" class="col-6 text-right">
+                 <div t-if="doc.state=='done'"  style="float:right; text-align:right;">
                     <strong>Importe total</strong>
                     <!--<span t-esc="sum(line.precio_unico for line in docs.tabla_devo)"/>-->
                     <t t-esc="sum(docs.tabla_devo.filtered( lambda r: r.estatus == 'Aprovado').mapped('precio_unico')) " />
@@ -230,12 +231,13 @@
              <!--Encabezado -->
           <t t-if="doc.tipo_usuario== 'cliente'">
             <div  class="row">
-              <div class="col-3 text-left">
-                <span>Daniel Robleas</span>
-              </div>  
-              <div class="col-3 text-right">
-                <p t-field="doc.fecha_devolucion"/>  
-              </div>
+               <div style="float:left; text-align:left;">
+                  <p>Daniel Robleas</p>
+                </div>
+                <div style="float:right; text-align:right;">
+                  <p t-field="doc.fecha_devolucion"/>  
+                </div>
+              <br/><br/>
               <div style="text-align: center">
                 <span>
                   Zapateria Platino S.A de C.V <br/>
@@ -244,7 +246,7 @@
                   RFC:ZPL1212183K1
                 </span>
               </div>
-            </div> 
+            </div>
             <t t-if="doc.tipo_usuario== 'cliente'">
               <div t-if="doc.state=='done'">
                 <strong>No.Cliente:                 
