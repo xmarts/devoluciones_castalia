@@ -20,6 +20,23 @@ class Devoluciones(models.Model):
 			text = pref + str(max(id_returned) + 1)
 		return text			
 
+	
+		def _name_defaultt(self):
+		cr = self.env.cr
+		cr.execute('select "id" from "model_devo" order by "id" desc limit 1')
+		id_returned = cr.fetchone()
+		if id_returned == None:
+			id_returned = (0,)
+		text = ''
+		pref = 'Devolucion - '
+		if ((max(id_returned) + 1)< 100):
+			text = pref + '00' + str(max(id_returned) + 1)
+		else:
+			text = pref + str(max(id_returned) + 1)
+		return text			
+
+
+	name = fields.Char(string="Devolucion", default=_name_defaultt)	
 	referencia = fields.Char(string="Numero", readonly=True, default = _name_default)
 	state = fields.Selection([('draft', 'Borrador'),('approve','Aprovado'),('done','Heho'),('reject','Rechazado')], default="draft")
 	tipo_usuario = fields.Selection([('cliente', 'Cliente'),('proveedor', 'Proveedor')], string="Tipo de usuario")
