@@ -68,6 +68,26 @@
         </form>
       </field>
     </record>
+        <!--crear filtros al modelo de devoluciones-->
+    <record id="vista_devoluciones_search" model="ir.ui.view">
+      <field name="name">model.devo.form</field>
+      <field name="model">model.devo</field>
+      <field name="arch" type="xml">
+        <search>
+          <field name="nombre_responsable" string="Responsable"/>
+          <field name="fecha_devolucion" string="Fecha"/>
+          <field name="num_aprovados" string="Productos Aceptados"/>
+          <field name="num_rechazados" string="Productos Rechados"/>
+          <field name="total_productos" string="Total de productos"/>
+
+
+          <group expand="0" string="Group By">
+              <filter string="Tipo" icon="terp-partner" domain="[]" help="Tipo" context="{'group_by':'tipo_usuario'}"/>
+              <filter string="Tipo" icon="terp-partner" domain="[]" help="Tipo" context="{'group_by':'nombre_responsable'}"/>
+          </group>
+        </search>
+      </field>
+    </record>
     
     <!--VISTA ARBOL-->
     <record id="model_devo_tree" model="ir.ui.view">
